@@ -25,9 +25,7 @@ public class InscRenovService {
     }
 
     public InscRenovResponse criar(InscRenovRequest request, String username) {
-
         InscRenov e = new InscRenov();
-
         e.setNome(request.getNome());
         e.setCpf(request.getCpf());
         e.setUnloc(request.getUnloc());
@@ -35,23 +33,19 @@ public class InscRenovService {
         e.setDatas(request.getDatas());
         e.setDescricao(request.getDescricao());
         e.setAnalise(request.getAnalise());
-        e.setUrgente(request.getUrgente() != null ? request.getUrgente() : false);
-
+        e.setUrgente(Boolean.TRUE.equals(request.getUrgente()));
         return toResponse(repository.save(e));
     }
 
     public List<InscRenovResponse> criarLote(List<InscRenovRequest> requests, String username) {
-
         return requests.stream()
                 .map(r -> criar(r, username))
                 .collect(Collectors.toList());
     }
 
     public InscRenovResponse atualizar(Long id, InscRenovRequest request) {
-
         InscRenov e = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Registro não encontrado"));
-
         e.setNome(request.getNome());
         e.setCpf(request.getCpf());
         e.setUnloc(request.getUnloc());
@@ -59,8 +53,7 @@ public class InscRenovService {
         e.setDatas(request.getDatas());
         e.setDescricao(request.getDescricao());
         e.setAnalise(request.getAnalise());
-        e.setUrgente(request.getUrgente() != null ? request.getUrgente() : false);
-
+        e.setUrgente(Boolean.TRUE.equals(request.getUrgente())); // ← corrigido
         return toResponse(repository.save(e));
     }
 
@@ -69,18 +62,14 @@ public class InscRenovService {
     }
 
     public InscRenovResponse lancar(Long id, String nomeUsuario) {
-
         InscRenov e = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Registro não encontrado"));
-
         e.setLancou(nomeUsuario);
         e.setDatalan(LocalDateTime.now());
-
         return toResponse(repository.save(e));
     }
 
     public PageResponse<InscRenovResponse> buscar(FiltroConsultaRequest filtro) {
-
         PageRequest pageable = PageRequest.of(
                 filtro.getPage() < 0 ? 0 : filtro.getPage(),
                 filtro.getSize() <= 0 ? 20 : filtro.getSize()
@@ -111,7 +100,6 @@ public class InscRenovService {
     }
 
     public List<InscRenovResponse> buscarPorCpf(String cpf) {
-
         return repository.findByCpf(cpf)
                 .stream()
                 .map(this::toResponse)
@@ -119,9 +107,7 @@ public class InscRenovService {
     }
 
     private InscRenovResponse toResponse(InscRenov e) {
-
         InscRenovResponse r = new InscRenovResponse();
-
         r.setId(e.getId());
         r.setNome(e.getNome());
         r.setCpf(e.getCpf());
@@ -133,7 +119,6 @@ public class InscRenovService {
         r.setLancou(e.getLancou());
         r.setDatalan(e.getDatalan());
         r.setUrgente(e.getUrgente());
-
         return r;
     }
 }

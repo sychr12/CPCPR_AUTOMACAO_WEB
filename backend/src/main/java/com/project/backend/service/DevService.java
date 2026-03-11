@@ -27,7 +27,6 @@ public class DevService {
     }
 
     public PageResponse<DevResponse> buscar(FiltroConsultaRequest filtro) {
-
         PageRequest pageable = PageRequest.of(
                 filtro.getPage() < 0 ? 0 : filtro.getPage(),
                 filtro.getSize() <= 0 ? 20 : filtro.getSize()
@@ -56,20 +55,15 @@ public class DevService {
     }
 
     public DevResponse criar(DevRequest request) {
-
         Dev dev = new Dev();
         dev.setNome(request.getNome());
         dev.setCpf(request.getCpf());
         dev.setUnloc(request.getUnloc());
         dev.setMemorandum(request.getMemorandum());
-
-        Dev salvo = repository.save(dev);
-
-        return converter(salvo);
+        return converter(repository.save(dev));
     }
 
     public List<DevResponse> criarLote(List<DevRequest> requests) {
-
         List<Dev> devs = requests.stream().map(req -> {
             Dev dev = new Dev();
             dev.setNome(req.getNome());
@@ -86,15 +80,12 @@ public class DevService {
     }
 
     public DevResponse atualizar(Long id, DevRequest request) {
-
         Dev dev = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Registro não encontrado"));
-
         dev.setNome(request.getNome());
         dev.setCpf(request.getCpf());
         dev.setUnloc(request.getUnloc());
         dev.setMemorandum(request.getMemorandum());
-
         return converter(repository.save(dev));
     }
 
@@ -102,36 +93,31 @@ public class DevService {
         repository.deleteById(id);
     }
 
+    // retorna apenas os pendentes (envio == null)
     public List<DevResponse> buscarPendentes(String unloc, String memorando) {
-
         return repository
-                .findByUnlocAndMemorandum(unloc, memorando)
+                .findByUnlocAndMemorandoAndEnvioIsNull(unloc, memorando)
                 .stream()
                 .map(this::converter)
                 .collect(Collectors.toList());
     }
 
+    // marca todos como enviados hoje (incluindo já enviados do mesmo unloc+memo)
     public void marcarEnviado(String unloc, String memorando) {
-
         List<Dev> registros = repository
-                .findByUnlocAndMemorandum(unloc, memorando);
-
+                .findByUnlocAndMemorandoAndEnvioIsNull(unloc, memorando);
         registros.forEach(dev -> dev.setEnvio(LocalDate.now()));
-
         repository.saveAll(registros);
     }
 
     private DevResponse converter(Dev dev) {
-
         DevResponse resp = new DevResponse();
-
         resp.setId(dev.getId());
         resp.setNome(dev.getNome());
         resp.setCpf(dev.getCpf());
         resp.setUnloc(dev.getUnloc());
         resp.setMemorandum(dev.getMemorandum());
         resp.setEnvio(dev.getEnvio());
-
         return resp;
     }
 }

@@ -1,102 +1,84 @@
-import axios from "axios"
+import axios from 'axios'
+import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 
-const api = axios.create({
-  baseURL: "http://localhost:8080/api"
+// ── Auth Store ────────────────────────────────────────────────────
+interface AuthState {
+  token: string | null
+  usuario: { nome: string; perfil: string } | null
+  setAuth: (token: string, usuario: { nome: string; perfil: string }) => void
+  logout: () => void
+}
+
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
+      token: null,
+      usuario: null,
+      setAuth: (token, usuario) => set({ token, usuario }),
+      logout: () => set({ token: null, usuario: null }),
+    }),
+    { name: 'carteira-auth' }
+  )
+)
+
+// ── Axios instance ────────────────────────────────────────────────
+const api = axios.create({ baseURL: '/api' })
+
+api.interceptors.request.use((config) => {
+  const token = useAuthStore.getState().token
+  if (token) config.headers.Authorization = `Bearer ${token}`
+  return config
 })
 
+api.interceptors.response.use(
+  (res) => res,
+  (err) => {
+    if (err.response?.status === 401) {
+      useAuthStore.getState().logout()
+      if (typeof window !== 'undefined') window.location.href = '/login'
+    }
+    return Promise.reject(err)
+  }
+)
+
+// ── Auth ──────────────────────────────────────────────────────────
+export const authApi = {
+  login:       (data: any) => api.post('/auth/login', data),
+  trocarSenha: (data: any) => api.post('/auth/trocar-senha', data),
+  me:          ()          => api.get('/auth/me'),
+}
+
+// ── InscRenov ─────────────────────────────────────────────────────
 export const inscRenovApi = {
-
-  listar: async () => {
-    const r = await api.get("/inscricoes")
-    return r.data
-  },
-
-  buscar: async (cpf: string) => {
-    const r = await api.get(`/inscricoes/buscar/${cpf}`)
-    return r.data
-  },
-
-  criar: async (data: any) => {
-    const r = await api.post("/inscricoes", data)
-    return r.data
-  },
-
-  criarLote: async (data: any[]) => {
-    const r = await api.post("/inscricoes/lote", data)
-    return r.data
-  },
-
-  lancar: async (id: number) => {
-    const r = await api.post(`/inscricoes/${id}/lancar`)
-    return r.data
-  }
+  listar:    (params?: Record<string, any>) => api.get('/inscrenov', { params }),
+  buscar:    (cpf: string)                  => api.get(`/inscrenov/cpf/${cpf}`),
+  criar:     (data: any)                    => api.post('/inscrenov', data),
+  criarLote: (data: any[])                  => api.post('/inscrenov/batch', data),
+  atualizar: (id: number, data: any)        => api.put(`/inscrenov/${id}`, data),
+  deletar:   (id: number)                   => api.delete(`/inscrenov/${id}`),
+  lancar:    (id: number)                   => api.patch(`/inscrenov/${id}/lancar`),
 }
 
+// ── Dev ───────────────────────────────────────────────────────────
 export const devApi = {
-
-  listar: async () => {
-    const r = await api.get("/devolucoes")
-    return r.data
-  },
-
-  buscar: async (cpf: string) => {
-    const r = await api.get(`/devolucoes/buscar/${cpf}`)
-    return r.data
-  },
-
-  criar: async (data: any) => {
-    const r = await api.post("/devolucoes", data)
-    return r.data
-  },
-
-  criarLote: async (data: any[]) => {
-    const r = await api.post("/devolucoes/lote", data)
-    return r.data
-  },
-
-  pendentes: async () => {
-    const r = await api.get("/devolucoes/pendentes")
-    return r.data
-  },
-
-  marcarEnviado: async (id: number) => {
-    const r = await api.post(`/devolucoes/${id}/enviado`)
-    return r.data
-  },
-
-  deletar: async (id: number) => {
-    const r = await api.delete(`/devolucoes/${id}`)
-    return r.data
-  }
+  listar:      (params?: Record<string, any>) => api.get('/dev', { params }),
+  buscar:      (cpf: string)                  => api.get(`/dev/cpf/${cpf}`),
+  criar:       (data: any)                    => api.post('/dev', data),
+  criarLote:   (data: any[])                  => api.post('/dev/batch', data),
+  atualizar:   (id: number, data: any)        => api.put(`/dev/${id}`, data),
+  deletar:     (id: number)                   => api.delete(`/dev/${id}`),
+  pendentes:   ()                             => api.get('/dev/pendentes'),
+  marcarEnvio: (data: any)                    => api.patch('/dev/marcar-enviado', data),
 }
 
+// ── Municípios ────────────────────────────────────────────────────
 export const municipioApi = {
-
-  listar: async () => {
-    const r = await api.get("/municipios")
-    return r.data
-  },
-
-  buscar: async (nome: string) => {
-    const r = await api.get(`/municipios/buscar/${nome}`)
-    return r.data
-  }
+  buscar: (q: string) => api.get('/municipios', { params: { q } }),
+  todos:  ()          => api.get('/municipios/todos'),
 }
 
-export const anexarApi = {
-
-  upload: async (formData: FormData) => {
-    const r = await api.post("/anexos", formData)
-    return r.data
-  },
-
-  anexarSIGED: async (formData: FormData) => {
-    const r = await api.post("/anexos/siged", formData)
-    return r.data
-  },
-
-  anexarSEFA: async (formData: FormData) => {
-    const r = await api.post("/anexos/sefa", formData)
-    return r.data
-  }
+// ── Dashboard ─────────────────────────────────────────────────────
+export const dashboardApi = {
+  stats: () => api.get('/dashboard/stats'),
 }

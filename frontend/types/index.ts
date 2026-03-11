@@ -1,113 +1,103 @@
-export interface Municipio {
-  id: number
+// ── Auth ──────────────────────────────────────────────────────────
+export interface LoginRequest {
   nome: string
-  codigo?: string
+  senha: string
 }
 
+export interface LoginResponse {
+  token: string
+  nome: string
+  perfil: string
+}
+
+export interface TrocarSenhaRequest {
+  senhaAtual: string
+  novaSenha: string
+}
+
+export interface Usuario {
+  id: number
+  nome: string
+  perfil: string
+  ativo: boolean
+}
+
+// ── InscRenov ─────────────────────────────────────────────────────
 export interface InscRenov {
   id: number
-  cpf: string
-  nome: string
-  municipio: string
-  data: string
-
-  unloc?: string
-  memorando?: string
-  urgente?: boolean
-  lancado?: boolean
-}
-
-export interface InscRenov {
-  id: number
   nome: string
   cpf: string
-  processo: string
-  data: string
-
-  unloc?: string
-  descricao?: string
-  lancou?: boolean
+  unloc: string
+  memorando: string
+  datas: string
+  descricao: string
+  analise?: string
+  lancou?: string
+  datalan?: string
   urgente?: boolean
 }
 
+export interface InscRenovRequest {
+  nome: string
+  cpf: string
+  unloc: string
+  memorando: string
+  datas: string
+  descricao: 'INSC' | 'RENOV'
+  analise?: string
+  urgente?: boolean
+}
 
+// ── Dev ───────────────────────────────────────────────────────────
 export interface Dev {
   id: number
-  cpf: string
   nome: string
+  cpf: string
+  unloc: string
+  memorando: string
   motivo: string
-  processo?: string
-  valor?: number
-  data: string
+  envio?: string
+  analise?: string
 }
 
 export interface DevRequest {
+  nome: string
   cpf: string
-  nome?: string
+  unloc: string
+  memorando: string
   motivo: string
+  analise?: string
 }
 
+// ── Filtro / Paginação ────────────────────────────────────────────
 export interface FiltroConsulta {
-  cpf?: string
   nome?: string
-  municipio?: string
-  unloc?: string
-}
-
-
-export interface DevRequest {
-  datas: string[]
+  cpf?: string
   unloc?: string
   memorando?: string
+  descricao?: string
+  lancou?: string
+  page?: number
+  size?: number
 }
 
-
-export interface DevRequest {
-  datas: string[]
+export interface PageResponse<T> {
+  content: T[]
+  totalPages: number
+  totalElements: number
+  currentPage: number
+  pageSize: number
 }
 
-interface BaseRequest {
-  datas: string[]
-  unloc?: string
-  memorando?: string
-}
-
-export interface InscRenovRequest extends BaseRequest {}
-
-export interface DevRequest extends BaseRequest {}
-
-
-export interface InscRenov {
-  id: number
+// ── Outros ────────────────────────────────────────────────────────
+export interface Municipio {
+  codigo: string
   nome: string
-  cpf: string
-  processo: string
-  data: string
-  unloc?: string
 }
 
-interface BaseRequest {
-  datas: string[]
-  unloc?: string
-  memorando?: string
+export interface DashboardStats {
+  totalInscricoes: number
+  totalRenovacoes: number
+  totalDevolucoes: number
+  total: number
 }
-
-export interface InscRenovRequest extends BaseRequest {}
-
-export interface DevRequest extends BaseRequest {}
-
-interface BaseRequest {
-  datas: string[]
-  nome?: string
-  cpf?: string
-  unloc?: string
-  memorando?: string
-  motivo?: string
-}
-
-export interface InscRenovRequest extends BaseRequest {
-  descricao?: 'INSC' | 'RENOV'
-  urgente?: boolean
-}
-
-export interface DevRequest extends BaseRequest {}

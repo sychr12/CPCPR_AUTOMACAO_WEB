@@ -3,9 +3,9 @@ package com.project.backend.dto.response;
 import java.time.LocalDateTime;
 
 public class ErroResponse {
-    private int status;
-    private String mensagem;
-    private LocalDateTime timestamp;
+    private final int status;
+    private final String mensagem;
+    private final LocalDateTime timestamp;
 
     public ErroResponse(int status, String mensagem) {
         this.status = status;
