@@ -12,7 +12,7 @@ import com.project.backend.service.DevService;
 import com.project.backend.service.InscRenovService;
 
 @RestController
-@RequestMapping("/api/dashboard")
+@RequestMapping("/dashboard")  // ← era /api/dashboard
 public class DashboardController {
 
     private final InscRenovService inscRenovService;

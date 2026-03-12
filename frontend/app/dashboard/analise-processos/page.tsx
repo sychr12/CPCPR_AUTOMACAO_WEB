@@ -1,13 +1,22 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { inscRenovApi } from '@/lib/api'
-import type { InscRenov } from '@/types'
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 
-import TotalCard from '@/components/TotalCard/page'
-import Skeleton from '@/components/Skeleton/page'
-import Vazio from '@/components/Vazio/page'
+import {
+  Map,
+  FileText,
+  RefreshCcw,
+  BarChart3,
+  CheckCircle,
+  Clock,
+  AlertCircle,
+  Search,
+  Inbox
+} from "lucide-react";
+
+import { inscRenovApi } from '@/lib/api';
+import type { InscRenov } from '@/types';
 
 interface ResumoUnloc {
   unloc: string
@@ -23,35 +32,35 @@ export default function AnaliseProcessosPage() {
 
   const [busca, setBusca] = useState('')
 
-  const qTodos = useQuery({
+  const q = useQuery<InscRenov[]>({
     queryKey: ['analise-todos'],
-    queryFn: async () => {
-      const r = await inscRenovApi.listar()
-      return (r?.data?.content ?? []) as InscRenov[]
+    queryFn: async (): Promise<InscRenov[]> => {
+      const res = await inscRenovApi.listar()
+      return res.data?.content ?? []
     },
-    staleTime: 60000
+    staleTime: 60000,
   })
 
-  const todos = qTodos.data ?? []
+  const todos: InscRenov[] = q.data ?? []
 
   const resumo: ResumoUnloc[] = Object.values(
     todos.reduce<Record<string, ResumoUnloc>>((acc, r) => {
 
-      const chave = r.unloc || 'SEM_UNLOC'
+      const k = r.unloc || 'SEM_UNLOC'
 
-      if (!acc[chave]) {
-        acc[chave] = {
-          unloc: chave,
+      if (!acc[k]) {
+        acc[k] = {
+          unloc: k,
           inscricoes: 0,
           renovacoes: 0,
           total: 0,
           lancados: 0,
           pendentes: 0,
-          urgentes: 0
+          urgentes: 0,
         }
       }
 
-      const g = acc[chave]
+      const g = acc[k]
 
       if (r.descricao === 'INSC') g.inscricoes++
       if (r.descricao === 'RENOV') g.renovacoes++
@@ -70,91 +79,195 @@ export default function AnaliseProcessosPage() {
 
   const filtrado = busca.trim()
     ? resumo.filter(r =>
-        r.unloc.toLowerCase().includes(busca.toLowerCase())
-      )
+      r.unloc.toLowerCase().includes(busca.toLowerCase())
+    )
     : resumo
 
-  const totais = resumo.reduce(
-    (acc, r) => ({
-      inscricoes: acc.inscricoes + r.inscricoes,
-      renovacoes: acc.renovacoes + r.renovacoes,
-      total: acc.total + r.total,
-      lancados: acc.lancados + r.lancados,
-      pendentes: acc.pendentes + r.pendentes,
-      urgentes: acc.urgentes + r.urgentes
-    }),
-    {
-      inscricoes: 0,
-      renovacoes: 0,
-      total: 0,
-      lancados: 0,
-      pendentes: 0,
-      urgentes: 0
-    }
-  )
+  const totais = resumo.reduce((acc, r) => ({
+    inscricoes: acc.inscricoes + r.inscricoes,
+    renovacoes: acc.renovacoes + r.renovacoes,
+    total: acc.total + r.total,
+    lancados: acc.lancados + r.lancados,
+    pendentes: acc.pendentes + r.pendentes,
+    urgentes: acc.urgentes + r.urgentes,
+  }), {
+    inscricoes: 0,
+    renovacoes: 0,
+    total: 0,
+    lancados: 0,
+    pendentes: 0,
+    urgentes: 0
+  })
+
+  const cardsResumo = [
+    { label: 'Municípios', valor: resumo.length, cor: '#7c3aed', icon: Map },
+    { label: 'Inscrições', valor: totais.inscricoes, cor: 'var(--gov-green)', icon: FileText },
+    { label: 'Renovações', valor: totais.renovacoes, cor: 'var(--gov-blue-light)', icon: RefreshCcw },
+    { label: 'Total', valor: totais.total, cor: 'var(--gov-navy)', icon: BarChart3 },
+    { label: 'Lançados', valor: totais.lancados, cor: 'var(--gov-green)', icon: CheckCircle },
+    { label: 'Pendentes', valor: totais.pendentes, cor: '#d97706', icon: Clock },
+    { label: 'Urgentes', valor: totais.urgentes, cor: 'var(--gov-red)', icon: AlertCircle },
+  ]
 
   return (
-
     <div className="animate-fade-up">
 
-      <h2 style={{ fontSize: '20px', marginBottom: '4px' }}>
-        Análise de Processos
-      </h2>
+      <div className="page-header">
 
-      <p
-        style={{
-          fontSize: '13px',
-          color: 'var(--text-muted)',
-          marginBottom: '24px'
-        }}
-      >
-        Resumo de inscrições e renovações agrupados por município.
-      </p>
+        <div>
+
+          <h2 className="page-titulo">
+            <BarChart3 size={20} style={{ marginRight: 8 }} />
+            Análise de Processos
+          </h2>
+
+          <p className="page-subtitulo">
+            Resumo agrupado por município — inscrições e renovações.
+          </p>
+
+        </div>
+
+      </div>
+
+      {/* CARDS */}
 
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
-          gap: '12px',
-          marginBottom: '28px'
+          gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))',
+          gap: 12,
+          marginBottom: 28
         }}
       >
 
-        <TotalCard label="Municípios" valor={resumo.length} cor="#a78bfa" icon="🗺️" loading={qTodos.isLoading}/>
-        <TotalCard label="Inscrições" valor={totais.inscricoes} cor="#2FA572" icon="📄" loading={qTodos.isLoading}/>
-        <TotalCard label="Renovações" valor={totais.renovacoes} cor="#4a9eff" icon="🔄" loading={qTodos.isLoading}/>
-        <TotalCard label="Total" valor={totais.total} cor="#fff" icon="📊" loading={qTodos.isLoading}/>
-        <TotalCard label="Lançados" valor={totais.lancados} cor="#2FA572" icon="✅" loading={qTodos.isLoading}/>
-        <TotalCard label="Pendentes" valor={totais.pendentes} cor="#f5a623" icon="⏳" loading={qTodos.isLoading}/>
-        <TotalCard label="Urgentes" valor={totais.urgentes} cor="#e05252" icon="🔴" loading={qTodos.isLoading}/>
+        {cardsResumo.map(c => {
+
+          const Icon = c.icon
+
+          return (
+
+            <div
+              key={c.label}
+              style={{
+                background: 'var(--bg-card)',
+                border: '1.5px solid var(--border)',
+                borderRadius: 'var(--radius-lg)',
+                padding: 16,
+                borderTop: `3px solid ${c.cor}`
+              }}
+            >
+
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: 10
+                }}
+              >
+
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    letterSpacing: 1,
+                    textTransform: 'uppercase',
+                    color: 'var(--text-muted)'
+                  }}
+                >
+                  {c.label}
+                </span>
+
+                <div
+                  style={{
+                    width: 30,
+                    height: 30,
+                    borderRadius: 8,
+                    background: c.cor + '15',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <Icon size={16} color={c.cor} />
+                </div>
+
+              </div>
+
+              {q.isLoading
+                ? <div style={{ height: 30, background: 'var(--bg)', borderRadius: 4 }} />
+                : <div
+                  style={{
+                    fontSize: 30,
+                    fontWeight: 700,
+                    color: c.cor
+                  }}
+                >
+                  {c.valor.toLocaleString('pt-BR')}
+                </div>
+              }
+
+            </div>
+
+          )
+
+        })}
 
       </div>
 
-      <div style={{ marginBottom: '16px', maxWidth: '320px' }}>
+      {/* BUSCA */}
+
+      <div style={{ maxWidth: 320, marginBottom: 16, position: 'relative' }}>
+
+        <Search
+          size={16}
+          style={{
+            position: 'absolute',
+            left: 10,
+            top: 10,
+            color: '#64748b'
+          }}
+        />
+
         <input
           value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-          placeholder="🔍 Filtrar por UNLOC..."
-          style={{ fontFamily: 'JetBrains Mono, monospace' }}
+          onChange={e => setBusca(e.target.value)}
+          placeholder="Filtrar por UNLOC..."
+          style={{ paddingLeft: 32 }}
         />
+
       </div>
+
+      {/* TABELA */}
 
       <div
         style={{
           background: 'var(--bg-card)',
-          border: '1px solid var(--border)',
-          borderRadius: '12px',
+          border: '1.5px solid var(--border)',
+          borderRadius: 'var(--radius-lg)',
           overflow: 'hidden'
         }}
       >
 
-        {qTodos.isLoading && <Skeleton />}
+        {q.isLoading ? (
 
-        {!qTodos.isLoading && !filtrado.length && (
-          <Vazio texto="Nenhum registro encontrado." />
-        )}
+          <div style={{ padding: 32, textAlign: 'center' }}>
+            Carregando...
+          </div>
 
-        {!qTodos.isLoading && filtrado.length > 0 && (
+        ) : !filtrado.length ? (
+
+          <div style={{ padding: 48, textAlign: 'center' }}>
+
+            <Inbox size={32} color="#94a3b8" />
+
+            <p style={{ marginTop: 8 }}>
+              Nenhum registro encontrado
+            </p>
+
+          </div>
+
+        ) : (
 
           <div style={{ overflowX: 'auto' }}>
 
@@ -162,7 +275,7 @@ export default function AnaliseProcessosPage() {
 
               <thead>
                 <tr>
-                  <th style={{ textAlign: 'left', paddingLeft: '18px' }}>UNLOC</th>
+                  <th>UNLOC</th>
                   <th>Inscrições</th>
                   <th>Renovações</th>
                   <th>Total</th>
@@ -175,72 +288,58 @@ export default function AnaliseProcessosPage() {
 
               <tbody>
 
-                {filtrado.map((r) => {
+                {filtrado.map(r => {
 
                   const pct = r.total
                     ? Math.round((r.lancados / r.total) * 100)
                     : 0
 
+                  const cor =
+                    pct === 100
+                      ? 'var(--gov-green)'
+                      : pct >= 50
+                        ? 'var(--gov-blue-light)'
+                        : '#d97706'
+
                   return (
 
                     <tr key={r.unloc}>
 
-                      <td style={{ textAlign: 'left', paddingLeft: '18px' }}>
-                        <span
-                          style={{
-                            fontFamily: 'JetBrains Mono, monospace',
-                            fontWeight: 700,
-                            fontSize: '12px',
-                            color: 'var(--green)'
-                          }}
-                        >
-                          {r.unloc}
-                        </span>
+                      <td>{r.unloc}</td>
+                      <td>{r.inscricoes}</td>
+                      <td>{r.renovacoes}</td>
+                      <td style={{ fontWeight: 700 }}>
+                        {r.total}
                       </td>
-
-                      <td><span className="badge badge-insc">{r.inscricoes}</span></td>
-                      <td><span className="badge badge-renov">{r.renovacoes}</span></td>
-                      <td>{r.total}</td>
-                      <td><span className="badge badge-ok">{r.lancados}</span></td>
+                      <td>{r.lancados}</td>
                       <td>{r.pendentes || '—'}</td>
                       <td>{r.urgentes || '—'}</td>
 
-                      <td style={{ minWidth: '120px' }}>
+                      <td style={{ minWidth: 140 }}>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
 
                           <div
                             style={{
                               flex: 1,
-                              height: '6px',
-                              borderRadius: '3px',
-                              background: 'var(--bg-card2)',
+                              height: 5,
+                              borderRadius: 3,
+                              background: '#e5e7eb',
                               overflow: 'hidden'
                             }}
                           >
 
                             <div
                               style={{
-                                width: `${pct}%`,
-                                height: '100%',
-                                background:
-                                  pct === 100
-                                    ? 'var(--green)'
-                                    : pct >= 50
-                                    ? '#4a9eff'
-                                    : '#f5a623'
+                                width: pct + '%',
+                                background: cor,
+                                height: '100%'
                               }}
                             />
 
                           </div>
 
-                          <span
-                            style={{
-                              fontSize: '10px',
-                              fontFamily: 'JetBrains Mono, monospace',
-                              color: 'var(--text-muted)'
-                            }}
-                          >
+                          <span style={{ fontSize: 11, minWidth: 32 }}>
                             {pct}%
                           </span>
 

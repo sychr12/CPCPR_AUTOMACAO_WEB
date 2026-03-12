@@ -23,6 +23,7 @@ export const useAuthStore = create<AuthState>()(
 )
 
 // ── Axios instance ────────────────────────────────────────────────
+// baseURL usa '/api' para o proxy do next.config.js encaminhar ao backend
 const api = axios.create({ baseURL: '/api' })
 
 api.interceptors.request.use((config) => {
@@ -63,13 +64,15 @@ export const inscRenovApi = {
 // ── Dev ───────────────────────────────────────────────────────────
 export const devApi = {
   listar:      (params?: Record<string, any>) => api.get('/dev', { params }),
-  buscar:      (cpf: string)                  => api.get(`/dev/cpf/${cpf}`),
   criar:       (data: any)                    => api.post('/dev', data),
   criarLote:   (data: any[])                  => api.post('/dev/batch', data),
   atualizar:   (id: number, data: any)        => api.put(`/dev/${id}`, data),
   deletar:     (id: number)                   => api.delete(`/dev/${id}`),
-  pendentes:   ()                             => api.get('/dev/pendentes'),
-  marcarEnvio: (data: any)                    => api.patch('/dev/marcar-enviado', data),
+  // Recebe objeto { unloc, memorando } — alinhado com devolucao/page.tsx
+  pendentes:   (params: { unloc: string; memorando: string }) =>
+    api.get('/dev/pendentes', { params }),
+  marcarEnvio: (params: { unloc: string; memorando: string }) =>
+    api.patch('/dev/marcar-enviado', null, { params }),
 }
 
 // ── Municípios ────────────────────────────────────────────────────

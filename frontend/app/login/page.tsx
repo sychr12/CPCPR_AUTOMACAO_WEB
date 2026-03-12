@@ -1,272 +1,278 @@
-'use client';
+'use client'
 
-import { useState }       from 'react';
-import { useRouter }      from 'next/navigation';
-import { useForm }        from 'react-hook-form';
-import { zodResolver }    from '@hookform/resolvers/zod';
-import { z }              from 'zod';
-import toast              from 'react-hot-toast';
-import { authApi }        from '@/lib/api';
-import { useAuthStore }   from '@/lib/api';
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useMutation } from '@tanstack/react-query'
+import {
+  User,
+  Lock,
+  Eye,
+  EyeOff,
+  LogIn,
+  AlertCircle
+} from 'lucide-react'
 
-// ── schema ───────────────────────────────────────────────────
-const schema = z.object({
-  nome:  z.string().min(1, 'Nome é obrigatório'),
-  senha: z.string().min(1, 'Senha é obrigatória'),
-});
+import { authApi, useAuthStore } from '@/lib/api'
+import type { LoginRequest } from '@/types'
 
-type FormData = z.infer<typeof schema>;
-
-// ── componente ───────────────────────────────────────────────
 export default function LoginPage() {
-  const router  = useRouter();
-  const setAuth = useAuthStore((s) => s.setAuth);
-  const [loading, setLoading] = useState(false);
+  const router = useRouter()
+  const setAuth = useAuthStore((s) => s.setAuth)
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<FormData>({ resolver: zodResolver(schema) });
+  const [form, setForm] = useState({ nome: '', senha: '' })
+  const [showSenha, setShowSenha] = useState(false)
+  const [erro, setErro] = useState('')
 
-  async function onSubmit(data: FormData) {
-    setLoading(true);
-    try {
-      const res = await authApi.login(data);
-      setAuth(res.data);
-      toast.success(`Bem-vindo, ${res.data.nome}!`);
-      router.push('/dashboard');
-    } catch (err: any) {
-      const msg = err?.response?.data?.mensagem ?? 'Usuário ou senha inválidos';
-      toast.error(msg);
-    } finally {
-      setLoading(false);
+  const login = useMutation({
+    mutationFn: (data: LoginRequest) => authApi.login(data),
+    onSuccess: (r) => {
+      setAuth(r.data.token, r.data.usuario)
+      router.replace('/dashboard')
+    },
+    onError: () => {
+      setErro('Usuário ou senha inválidos.')
+    },
+  })
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setErro('')
+
+    if (!form.nome || !form.senha) {
+      setErro('Preencha todos os campos.')
+      return
     }
+
+    login.mutate(form)
   }
 
   return (
-    <main
-      style={{
-        minHeight:       '100vh',
-        background:      'var(--bg)',
-        display:         'flex',
-        alignItems:      'center',
-        justifyContent:  'center',
-        position:        'relative',
-        overflow:        'hidden',
-      }}
-    >
-      {/* grade de fundo */}
-      <div
-        style={{
-          position:        'fixed',
-          inset:           0,
-          backgroundImage: `
-            linear-gradient(rgba(47,165,114,0.04) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(47,165,114,0.04) 1px, transparent 1px)
-          `,
-          backgroundSize: '36px 36px',
-          pointerEvents:  'none',
-        }}
-      />
+    <div className="login-container">
 
-      {/* brilho verde inferior-esquerdo */}
-      <div
-        style={{
-          position:     'fixed',
-          bottom:       '-120px',
-          left:         '-120px',
-          width:        '500px',
-          height:       '500px',
-          borderRadius: '50%',
-          background:   'radial-gradient(circle, rgba(47,165,114,0.12) 0%, transparent 70%)',
-          pointerEvents:'none',
-        }}
-      />
+      <div className="login-box">
 
-      {/* brilho verde superior-direito */}
-      <div
-        style={{
-          position:     'fixed',
-          top:          '-80px',
-          right:        '-80px',
-          width:        '360px',
-          height:       '360px',
-          borderRadius: '50%',
-          background:   'radial-gradient(circle, rgba(47,165,114,0.08) 0%, transparent 70%)',
-          pointerEvents:'none',
-        }}
-      />
-
-      {/* CARD LOGIN */}
-      <div
-        className="animate-fade-up"
-        style={{
-          position:     'relative',
-          zIndex:       1,
-          width:        '100%',
-          maxWidth:     '400px',
-          margin:       '0 16px',
-          background:   'var(--bg-card)',
-          border:       '1px solid var(--border)',
-          borderRadius: '16px',
-          padding:      '40px 36px',
-          boxShadow:    '0 24px 80px rgba(0,0,0,0.5)',
-        }}
-      >
-        {/* logo / título */}
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <div
-            style={{
-              width:        '52px',
-              height:       '52px',
-              borderRadius: '14px',
-              background:   'var(--green)',
-              display:      'flex',
-              alignItems:   'center',
-              justifyContent: 'center',
-              fontSize:     '26px',
-              margin:       '0 auto 16px',
-              boxShadow:    '0 0 24px rgba(47,165,114,0.35)',
-            }}
-          >
-            🌿
-          </div>
-
-          <h1 style={{ fontSize: '20px', marginBottom: '4px', color: '#fff' }}>
-            Carteira do Produtor Rural
-          </h1>
-          <p
-            style={{
-              fontSize:    '11px',
-              color:       'var(--text-muted)',
-              fontFamily:  'JetBrains Mono, monospace',
-              letterSpacing: '2px',
-            }}
-          >
-            CPCPR — ACESSO RESTRITO
-          </p>
+        <div className="logo">
+          <LogIn size={28} />
         </div>
 
-        {/* formulário */}
-        <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <h1 className="titulo">CPCPR</h1>
+        <p className="subtitulo">
+          Sistema do Produtor Rural
+        </p>
 
-          {/* campo nome */}
-          <div style={{ marginBottom: '16px' }}>
-            <label
-              htmlFor="nome"
-              style={{
-                display:      'block',
-                fontSize:     '11px',
-                fontFamily:   'JetBrains Mono, monospace',
-                letterSpacing:'1.5px',
-                color:        'var(--text-muted)',
-                marginBottom: '6px',
-                textTransform:'uppercase',
-              }}
-            >
-              Nome de usuário
-            </label>
-            <input
-              id="nome"
-              type="text"
-              autoComplete="username"
-              autoFocus
-              {...register('nome')}
-              placeholder="seu.nome"
-              style={{
-                borderColor: errors.nome ? '#e05252' : undefined,
-              }}
-            />
-            {errors.nome && (
-              <p style={{ fontSize: '11px', color: '#e05252', marginTop: '4px' }}>
-                {errors.nome.message}
-              </p>
-            )}
+        {erro && (
+          <div className="erro">
+            <AlertCircle size={18} />
+            {erro}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit}>
+
+          <div className="campo">
+
+            <label>Usuário</label>
+
+            <div className="input-box">
+
+              <User size={18} className="icon" />
+
+              <input
+                type="text"
+                placeholder="nome.usuario"
+                value={form.nome}
+                onChange={(e) =>
+                  setForm({ ...form, nome: e.target.value })
+                }
+              />
+
+            </div>
+
           </div>
 
-          {/* campo senha */}
-          <div style={{ marginBottom: '28px' }}>
-            <label
-              htmlFor="senha"
-              style={{
-                display:      'block',
-                fontSize:     '11px',
-                fontFamily:   'JetBrains Mono, monospace',
-                letterSpacing:'1.5px',
-                color:        'var(--text-muted)',
-                marginBottom: '6px',
-                textTransform:'uppercase',
-              }}
-            >
-              Senha
-            </label>
-            <input
-              id="senha"
-              type="password"
-              autoComplete="current-password"
-              {...register('senha')}
-              placeholder="••••••••"
-              style={{
-                borderColor: errors.senha ? '#e05252' : undefined,
-              }}
-            />
-            {errors.senha && (
-              <p style={{ fontSize: '11px', color: '#e05252', marginTop: '4px' }}>
-                {errors.senha.message}
-              </p>
-            )}
+          <div className="campo">
+
+            <label>Senha</label>
+
+            <div className="input-box">
+
+              <Lock size={18} className="icon" />
+
+              <input
+                type={showSenha ? 'text' : 'password'}
+                placeholder="••••••••"
+                value={form.senha}
+                onChange={(e) =>
+                  setForm({ ...form, senha: e.target.value })
+                }
+              />
+
+              <button
+                type="button"
+                className="btn-eye"
+                onClick={() => setShowSenha(!showSenha)}
+              >
+                {showSenha ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+
+            </div>
+
           </div>
 
-          {/* botão */}
           <button
+            className="btn-login"
             type="submit"
-            disabled={loading}
-            className="btn btn-primary"
-            style={{ width: '100%', padding: '11px', fontSize: '14px' }}
+            disabled={login.isPending}
           >
-            {loading ? (
-              <>
-                <Spinner />
-                Entrando…
-              </>
-            ) : (
-              'Entrar'
-            )}
+
+            <LogIn size={18} />
+
+            {login.isPending ? 'Entrando...' : 'Entrar'}
+
           </button>
 
         </form>
 
-        {/* rodapé */}
-        <p
-          style={{
-            textAlign:  'center',
-            marginTop:  '24px',
-            fontSize:   '10px',
-            color:      'var(--text-muted)',
-            fontFamily: 'JetBrains Mono, monospace',
-          }}
-        >
-          SEFA — Secretaria de Estado da Fazenda do Amazonas
-        </p>
       </div>
-    </main>
-  );
-}
 
-// ── spinner inline ────────────────────────────────────────────
-function Spinner() {
-  return (
-    <svg
-      width="16" height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      style={{ animation: 'spin 0.7s linear infinite' }}
-    >
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
-    </svg>
-  );
+      <style jsx>{`
+
+        .login-container{
+          height:100vh;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          background:linear-gradient(135deg,#0f172a,#1e3a8a);
+          font-family:system-ui;
+        }
+
+        .login-box{
+          width:360px;
+          background:white;
+          padding:36px;
+          border-radius:14px;
+          box-shadow:0 20px 40px rgba(0,0,0,0.25);
+          animation:fade 0.4s ease;
+        }
+
+        @keyframes fade{
+          from{
+            opacity:0;
+            transform:translateY(10px);
+          }
+          to{
+            opacity:1;
+            transform:translateY(0);
+          }
+        }
+
+        .logo{
+          display:flex;
+          justify-content:center;
+          margin-bottom:10px;
+          color:#1d4ed8;
+        }
+
+        .titulo{
+          text-align:center;
+          margin:0;
+          font-size:26px;
+          font-weight:700;
+          color:#0f172a;
+        }
+
+        .subtitulo{
+          text-align:center;
+          font-size:14px;
+          color:#64748b;
+          margin-bottom:28px;
+        }
+
+        .campo{
+          margin-bottom:18px;
+        }
+
+        label{
+          font-size:13px;
+          font-weight:600;
+          color:#334155;
+        }
+
+        .input-box{
+          margin-top:6px;
+          display:flex;
+          align-items:center;
+          border:1px solid #cbd5e1;
+          border-radius:8px;
+          padding:10px;
+          gap:8px;
+          transition:all .2s;
+        }
+
+        .input-box:focus-within{
+          border-color:#1d4ed8;
+          box-shadow:0 0 0 2px rgba(29,78,216,0.15);
+        }
+
+        .icon{
+          color:#64748b;
+        }
+
+        input{
+          border:none;
+          outline:none;
+          flex:1;
+          font-size:14px;
+        }
+
+        .btn-eye{
+          border:none;
+          background:none;
+          cursor:pointer;
+          color:#64748b;
+          display:flex;
+          align-items:center;
+        }
+
+        .btn-login{
+          width:100%;
+          margin-top:12px;
+          padding:12px;
+          border:none;
+          border-radius:8px;
+          background:#1d4ed8;
+          color:white;
+          font-weight:600;
+          display:flex;
+          justify-content:center;
+          align-items:center;
+          gap:8px;
+          cursor:pointer;
+          transition:all .2s;
+        }
+
+        .btn-login:hover{
+          background:#1e40af;
+        }
+
+        .btn-login:disabled{
+          opacity:0.6;
+          cursor:not-allowed;
+        }
+
+        .erro{
+          display:flex;
+          align-items:center;
+          gap:6px;
+          background:#fee2e2;
+          color:#991b1b;
+          padding:10px;
+          border-radius:8px;
+          font-size:13px;
+          margin-bottom:16px;
+        }
+
+      `}</style>
+    </div>
+  )
 }

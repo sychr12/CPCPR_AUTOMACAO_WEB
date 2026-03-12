@@ -8,6 +8,10 @@ export interface LoginResponse {
   token: string
   nome: string
   perfil: string
+
+  // novas opções (não quebram código antigo)
+  expiraEm?: number
+  refreshToken?: string
 }
 
 export interface TrocarSenhaRequest {
@@ -20,7 +24,13 @@ export interface Usuario {
   nome: string
   perfil: string
   ativo: boolean
+
+  // opções extras
+  criadoEm?: string
+  ultimoLogin?: string
 }
+
+
 
 // ── InscRenov ─────────────────────────────────────────────────────
 export interface InscRenov {
@@ -35,6 +45,11 @@ export interface InscRenov {
   lancou?: string
   datalan?: string
   urgente?: boolean
+
+  // opções extras
+  observacao?: string
+  criadoEm?: string
+  atualizadoEm?: string
 }
 
 export interface InscRenovRequest {
@@ -46,7 +61,12 @@ export interface InscRenovRequest {
   descricao: 'INSC' | 'RENOV'
   analise?: string
   urgente?: boolean
+
+  // novas opções possíveis
+  observacao?: string
 }
+
+
 
 // ── Dev ───────────────────────────────────────────────────────────
 export interface Dev {
@@ -58,6 +78,10 @@ export interface Dev {
   motivo: string
   envio?: string
   analise?: string
+
+  // opções extras
+  resolvido?: boolean
+  resolvidoPor?: string
 }
 
 export interface DevRequest {
@@ -67,7 +91,12 @@ export interface DevRequest {
   memorando: string
   motivo: string
   analise?: string
+
+  // novas opções
+  prioridade?: 'NORMAL' | 'URGENTE'
 }
+
+
 
 // ── Filtro / Paginação ────────────────────────────────────────────
 export interface FiltroConsulta {
@@ -79,6 +108,11 @@ export interface FiltroConsulta {
   lancou?: string
   page?: number
   size?: number
+
+  // filtros adicionais
+  dataInicio?: string
+  dataFim?: string
+  urgente?: boolean
 }
 
 export interface PageResponse<T> {
@@ -87,12 +121,22 @@ export interface PageResponse<T> {
   totalElements: number
   currentPage: number
   pageSize: number
+
+  // info adicional
+  hasNext?: boolean
+  hasPrevious?: boolean
 }
+
+
 
 // ── Outros ────────────────────────────────────────────────────────
 export interface Municipio {
   codigo: string
   nome: string
+
+  // extras possíveis
+  estado?: string
+  ativo?: boolean
 }
 
 export interface DashboardStats {
@@ -100,4 +144,8 @@ export interface DashboardStats {
   totalRenovacoes: number
   totalDevolucoes: number
   total: number
+
+  // estatísticas extras
+  totalUrgentes?: number
+  totalHoje?: number
 }

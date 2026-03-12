@@ -17,7 +17,7 @@ import com.project.backend.dto.response.LoginResponse;
 import com.project.backend.service.AuthService;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/auth")  // ← era /api/auth
 public class AuthController {
 
     private final AuthService authService;
@@ -35,27 +35,17 @@ public class AuthController {
     public ResponseEntity<Void> trocarSenha(
             @AuthenticationPrincipal UserDetails user,
             @RequestBody TrocarSenhaRequest request) {
-
-        if (user == null) {
-            return ResponseEntity.status(401).build();
-        }
-
+        if (user == null) return ResponseEntity.status(401).build();
         authService.trocarSenha(user.getUsername(), request);
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/me")
     public ResponseEntity<Map<String, String>> me(@AuthenticationPrincipal UserDetails user) {
-
-        if (user == null) {
-            return ResponseEntity.status(401).build();
-        }
-
-        return ResponseEntity.ok(
-                Map.of(
-                        "nome", user.getUsername(),
-                        "perfil", user.getAuthorities().iterator().next().getAuthority()
-                )
-        );
+        if (user == null) return ResponseEntity.status(401).build();
+        return ResponseEntity.ok(Map.of(
+            "nome", user.getUsername(),
+            "perfil", user.getAuthorities().iterator().next().getAuthority()
+        ));
     }
 }

@@ -1,8 +1,5 @@
 package com.project.backend.service;
 
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.project.backend.dto.request.LoginRequest;
@@ -16,26 +13,25 @@ import com.project.backend.security.JwtService;
 public class AuthService {
 
     private final UsuarioRepository usuarioRepository;
-    private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-    private final AuthenticationManager authManager;
 
-    public AuthService(UsuarioRepository usuarioRepository,
-                       PasswordEncoder passwordEncoder,
-                       JwtService jwtService,
-                       AuthenticationManager authManager) {
+    public AuthService(UsuarioRepository usuarioRepository, JwtService jwtService) {
         this.usuarioRepository = usuarioRepository;
-        this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
-        this.authManager = authManager;
     }
 
     public LoginResponse login(LoginRequest request) {
-        authManager.authenticate(
-            new UsernamePasswordAuthenticationToken(request.getNome(), request.getSenha())
-        );
         Usuario usuario = usuarioRepository.findByNome(request.getNome())
             .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+        if (!request.getSenha().equals(usuario.getSenha())) {
+            throw new RuntimeException("Senha incorreta");
+        }
+
+        if (Boolean.FALSE.equals(usuario.getAtivo())) {
+            throw new RuntimeException("Usuário inativo");
+        }
+
         String token = jwtService.generateToken(usuario.getNome());
         return new LoginResponse(token, usuario.getNome(), usuario.getPerfil());
     }
@@ -43,10 +39,10 @@ public class AuthService {
     public void trocarSenha(String nomeUsuario, TrocarSenhaRequest request) {
         Usuario usuario = usuarioRepository.findByNome(nomeUsuario)
             .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
-        if (!passwordEncoder.matches(request.getSenhaAtual(), usuario.getSenha())) {
+        if (!request.getSenhaAtual().equals(usuario.getSenha())) {
             throw new RuntimeException("Senha atual incorreta");
         }
-        usuario.setSenha(passwordEncoder.encode(request.getNovaSenha()));
+        usuario.setSenha(request.getNovaSenha());
         usuarioRepository.save(usuario);
     }
 }
